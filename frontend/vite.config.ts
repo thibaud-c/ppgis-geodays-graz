@@ -5,7 +5,7 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/ppgis-GeoDays/' : '/',
+  base: command === 'build' ? '/ppgis-geodays-graz/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
