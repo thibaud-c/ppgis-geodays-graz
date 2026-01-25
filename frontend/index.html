@@ -15,9 +15,10 @@
           var decoded = l.search.slice(1).split('&').map(function(s) { 
             return s.replace(/~and~/g, '&')
           }).join('?');
-          window.history.replaceState(null, null,
-              l.pathname.slice(0, l.pathname.lastIndexOf('/') + 1) + decoded + l.hash
-          );
+          var basePath = l.pathname.slice(0, l.pathname.lastIndexOf('/'));
+          // Ensure we don't have double slashes if decoded starts with one
+          var cleanPath = (decoded[0] === '/' ? basePath + decoded : basePath + '/' + decoded);
+          window.history.replaceState(null, null, cleanPath + l.hash);
         }
       }(window.location))
     </script>

@@ -1,73 +1,35 @@
-# React + TypeScript + Vite
+# Community Safety Map - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the React-based frontend for the Community Safety Map PPGIS application.
 
-Currently, two official plugins are available:
+## Tech Stack
+- **Framework**: React 19
+- **Build Tool**: Vite 6
+- **Styling**: Tailwind CSS 4
+- **Components**: Radix UI + Lucide Icons
+- **Mapping**: Leaflet + H3-js + Turf.js
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Development
 
-## React Compiler
+### Prerequisites
+- [Bun](https://bun.sh/) installed.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Setup
+1. Copy `.env.example` to `.env`.
+2. Set `VITE_API_BASE_URL` to your local or remote API endpoint.
 
-## Expanding the ESLint configuration
+### Scripts
+- `bun run dev`: Start development server.
+- `bun run build`: Create production build (outputs to `dist/`).
+- `bun run preview`: Preview production build locally.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Deployment (GitHub Pages)
+The frontend is configured for deployment on GitHub Pages at `https://thibaud-c.github.io/ppgis-geodays-graz/`.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### SPA Workaround
+To support clean URLs (no `#`) on GitHub Pages, this project uses:
+- `404.html`: Redirects 404s to `index.html` with route information.
+- `index.html`: A tiny script in the `<head>` to restore the intended route from the redirect.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Routing
+Explicit navigation between **Map** and **Dashboard** is available via icons in the header.
