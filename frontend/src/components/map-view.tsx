@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { Plus, Minus, Navigation } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from '@/components/theme-provider';
@@ -22,20 +22,25 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 export type ViewMode = 'markers' | 'heatmap' | 'h3';
 
+export interface MarkerData {
+    id: string;
+    latitude: number;
+    longitude: number;
+    sentiment: 'like' | 'dislike';
+    comment?: string;
+    isNew?: boolean;
+    source?: 'A' | 'B'; // For comparison mode
+}
+
 interface MapViewProps {
     onMapClick?: (lat: number, lng: number) => void;
-    markers?: Array<{
-        id: string;
-        latitude: number;
-        longitude: number;
-        sentiment: 'like' | 'dislike';
-        isNew?: boolean;
-    }>;
+    onMarkerClick?: (marker: MarkerData) => void;
+    markers?: MarkerData[];
     tempMarker?: { lat: number; lng: number } | null;
     viewMode?: ViewMode;
 }
 
-export function MapView({ onMapClick, markers = [], tempMarker, viewMode = 'markers' }: MapViewProps) {
+export function MapView({ onMapClick, onMarkerClick, markers = [], tempMarker, viewMode = 'markers' }: MapViewProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const mapInstance = useRef<L.Map | null>(null);
     const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -154,34 +159,39 @@ export function MapView({ onMapClick, markers = [], tempMarker, viewMode = 'mark
         if (viewMode === 'markers') {
             markers.forEach((m) => {
                 const color = m.sentiment === 'like' ? '#10b981' : '#f43f5e';
+                const isVersionB = m.source === 'B';
+                const isCompareMode = m.source === 'A' || m.source === 'B';
 
-                L.circleMarker([m.latitude, m.longitude], {
-                    color: 'white',
-                    weight: 2,
+                const circleMarker = L.circleMarker([m.latitude, m.longitude], {
+                    color: isCompareMode ? color : 'white', // Compare mode: colored border for both
+                    weight: isVersionB ? 3 : 2,
                     fillColor: color,
-                    fillOpacity: m.isNew ? 1 : 0.9,
+                    fillOpacity: isVersionB ? 0.4 : (m.isNew ? 1 : 0.9), // Version B: lower opacity
                     radius: m.isNew ? 12 : 8,
+                    dashArray: isVersionB ? '4 4' : undefined, // Version B: dashed border
                     className: m.isNew ? 'new-marker-pulse' : '',
                 }).addTo(mapInstance.current!);
+
+                // Attach click handler
+                if (onMarkerClick) {
+                    circleMarker.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e); // Prevent map click
+                        onMarkerClick(m);
+                    });
+                }
             });
         }
-    }, [markers, viewMode]);
+    }, [markers, viewMode, onMarkerClick]);
 
     const handleZoomIn = () => mapInstance.current?.zoomIn();
     const handleZoomOut = () => mapInstance.current?.zoomOut();
-    const handleLocate = () => {
-        mapInstance.current?.locate({ setView: true, maxZoom: 16 });
-    };
 
     return (
         <div className="relative flex-1 w-full h-full min-h-0 isolate">
             <div ref={mapContainer} className="w-full h-full z-0" style={{ minHeight: '100%' }} />
 
             {/* Custom Controls */}
-            <div className="absolute bottom-8 right-4 z-[400] flex flex-col gap-2">
-                <Button variant="secondary" size="icon" onClick={handleLocate} className="rounded-full shadow-lg hover:scale-105 transition-transform">
-                    <Navigation className="h-5 w-5" />
-                </Button>
+            <div className="absolute bottom-24 right-4 z-[400] flex flex-col gap-2">
                 <div className="flex flex-col rounded-lg shadow-lg bg-card/90 backdrop-blur-sm border border-border/50 overflow-hidden">
                     <Button variant="ghost" size="icon" onClick={handleZoomIn} className="rounded-none h-10 w-10 hover:bg-accent/50">
                         <Plus className="h-5 w-5" />

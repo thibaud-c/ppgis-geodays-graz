@@ -1,11 +1,10 @@
-import { useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { MapView } from '@/components/map-view';
+import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { MapView, type MarkerData } from '@/components/map-view';
 import { ModeToggle } from '@/components/mode-toggle';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { BarChart3 } from 'lucide-react';
 import {
     Sheet,
     SheetContent,
@@ -16,6 +15,7 @@ import {
 } from '@/components/ui/sheet';
 import { ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useSubmitMarker } from '@/hooks/use-submit-marker';
+import { MarkerDetailSheet } from '@/components/marker-detail-sheet';
 import { cn } from '@/lib/utils';
 
 export function MapPage() {
@@ -33,18 +33,39 @@ export function MapPage() {
         setIsOpen,
         isLoading,
         tempMarker,
-        markers, // Current confirmed markers
+        markers,
         sentiment,
         setSentiment,
         responseText,
         setResponseText,
         openSheet,
+        openEditSheet,
         closeSheet,
         submit,
-    } = useSubmitMarker(version); // Pass version to hook
+        handleDelete,
+    } = useSubmitMarker({ version, sessionOnly: true });
+
+    // State for viewing existing marker details
+    const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
 
     const handleMapClick = (lat: number, lng: number) => {
         openSheet(lat, lng);
+    };
+
+    const handleMarkerClick = (marker: MarkerData) => {
+        setSelectedMarker(marker);
+        setIsDetailOpen(true);
+    };
+
+    const handleEdit = (marker: MarkerData) => {
+        setIsDetailOpen(false);
+        openEditSheet(marker);
+    };
+
+    const handleDeleteConfirm = async (marker: MarkerData) => {
+        setIsDetailOpen(false);
+        await handleDelete(marker);
     };
 
     return (
@@ -54,14 +75,10 @@ export function MapPage() {
                 <div className="pointer-events-auto rounded-xl border bg-card/80 backdrop-blur-md shadow-lg p-4 flex-1 mr-4 max-w-md">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-lg font-bold tracking-tight text-foreground">Community Safety Map</h1>
+                            <h1 className="text-lg font-bold tracking-tight text-foreground">Community Safety Map Perspectives</h1>
                             <p className="text-xs text-muted-foreground">Tap map to report safety issues</p>
                         </div>
-                        <Button variant="ghost" size="icon" asChild className="rounded-xl">
-                            <Link to="/stat">
-                                <BarChart3 className="h-5 w-5" />
-                            </Link>
-                        </Button>
+                        {/* Stats link removed */}
                     </div>
                 </div>
                 <div className="pointer-events-auto">
@@ -73,17 +90,29 @@ export function MapPage() {
             <main className="absolute inset-0 z-0">
                 <MapView
                     onMapClick={handleMapClick}
+                    onMarkerClick={handleMarkerClick}
                     markers={markers}
                     tempMarker={tempMarker}
                 />
             </main>
 
-            {/* Submission Sheet */}
-            {/* Submission Sheet */}
+            {/* Marker Detail Sheet (View/Edit/Delete) */}
+            <MarkerDetailSheet
+                marker={selectedMarker}
+                isOpen={isDetailOpen}
+                onClose={() => setIsDetailOpen(false)}
+                editable={true}
+                onEdit={handleEdit}
+                onDelete={handleDeleteConfirm}
+            />
+
+            {/* Submission/Edit Sheet */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetContent side="bottom" className="m-4 rounded-2xl border border-border/50 shadow-2xl max-w-[calc(100vw-2rem)] sm:max-w-md mx-auto z-[500] dark:bg-card/95 backdrop-blur-sm overflow-hidden pb-6 px-6 pt-6">
                     <SheetHeader className="text-left mb-5">
-                        <SheetTitle className="text-2xl font-bold text-primary">Add Marker</SheetTitle>
+                        <SheetTitle className="text-2xl font-bold text-primary">
+                            {tempMarker ? 'Edit Marker' : 'Add Marker'}
+                        </SheetTitle>
                         <SheetDescription className="text-base">
                             How safe does this location feel?
                         </SheetDescription>
@@ -125,7 +154,7 @@ export function MapPage() {
                             </Button>
                         </div>
 
-                        {/* Comment Area - Wrapper with min-height to prevent jitter */}
+                        {/* Comment Area */}
                         <div className="space-y-3 min-h-[120px]">
                             <Label htmlFor="comment" className="text-base font-medium text-foreground">Why? (Optional)</Label>
                             <div className="relative">
@@ -146,7 +175,7 @@ export function MapPage() {
                         {/* Footer Actions */}
                         <SheetFooter className="flex-col sm:flex-row gap-3 mt-5">
                             <Button onClick={submit} disabled={!sentiment || isLoading} className="w-full sm:w-auto h-12 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow rounded-xl">
-                                {isLoading ? 'Saving...' : 'Submit Marker'}
+                                {isLoading ? 'Saving...' : 'Save Marker'}
                             </Button>
                             <Button variant="ghost" onClick={closeSheet} disabled={isLoading} className="w-full sm:w-auto h-12 rounded-xl text-muted-foreground hover:text-foreground">
                                 Cancel

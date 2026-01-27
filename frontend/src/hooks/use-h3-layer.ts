@@ -12,59 +12,81 @@ export function useH3Layer(
     useEffect(() => {
         if (!map) return;
 
-        if (layerRef.current) {
-            map.removeLayer(layerRef.current);
-            layerRef.current = null;
-        }
+        // --- 1. Zoom Listener ---
+        const handleZoom = () => {
+            // Force re-render with new zoom
+            // Note: In a real component, we'd use state, but here we can just 
+            // re-run the effect if we add `map.getZoom()` to a dependency or simpler:
+            // We can just define the logic inside the effect and listen to moveend
+            updateLayer();
+        };
 
-        if (active && points.length > 0) {
-            const resolution = 9; // ~0.1km2 hexagons
-            const counts: Record<string, number> = {};
+        map.on('zoomend', handleZoom);
 
-            // 1. Index points
-            points.forEach(p => {
-                const h3Index = latLngToCell(p.lat, p.lng, resolution);
-                counts[h3Index] = (counts[h3Index] || 0) + 1;
-            });
 
-            // 2. Determine scale (simple max)
-            const maxCount = Math.max(...Object.values(counts));
+        // --- 2. Layer Logic ---
+        const updateLayer = () => {
+            if (layerRef.current) {
+                map.removeLayer(layerRef.current);
+                layerRef.current = null;
+            }
 
-            // 3. Generate Features
-            const features: GeoJSON.Feature[] = Object.entries(counts).map(([h3Index, count]) => {
-                const boundary = cellToBoundary(h3Index, true); // true for GeoJSON conformant (lng, lat)
-                // boundary is [lng, lat][], needs to be wrapped in [ boundary ] for Polygon
+            if (active && points.length > 0) {
+                const zoom = map.getZoom();
 
-                return {
-                    type: 'Feature',
-                    properties: { count, density: count / maxCount },
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [boundary]
-                    }
-                };
-            });
+                // Determine resolution based on zoom
+                let resolution = 9;
+                if (zoom > 14) resolution = 10;      // High detail
+                else if (zoom >= 12) resolution = 9; // City
+                else if (zoom >= 10) resolution = 8; // Region
+                else resolution = 7;                 // Country
 
-            // 4. Create GeoJSON Layer
-            layerRef.current = L.geoJSON({ type: 'FeatureCollection', features } as any, { // eslint-disable-line
-                style: (feature) => {
-                    const density = feature?.properties.density || 0;
+                const counts: Record<string, number> = {};
+
+                // Index points
+                points.forEach(p => {
+                    const h3Index = latLngToCell(p.lat, p.lng, resolution);
+                    counts[h3Index] = (counts[h3Index] || 0) + 1;
+                });
+
+                const maxCount = Math.max(...Object.values(counts));
+
+                const features: GeoJSON.Feature[] = Object.entries(counts).map(([h3Index, count]) => {
+                    const boundary = cellToBoundary(h3Index, true);
                     return {
-                        color: 'white',
-                        weight: 1,
-                        fillColor: getColor(density),
-                        fillOpacity: 0.6 + (density * 0.3) // Higher density = more opaque
+                        type: 'Feature',
+                        properties: { count, density: count / maxCount },
+                        geometry: {
+                            type: 'Polygon',
+                            coordinates: [boundary]
+                        }
                     };
-                },
-                onEachFeature: (feature, layer) => {
-                    layer.bindPopup(`${feature.properties.count} submissions`);
-                }
-            }).addTo(map);
-        }
+                });
+
+                layerRef.current = L.geoJSON({ type: 'FeatureCollection', features } as any, { // eslint-disable-line
+                    style: (feature) => {
+                        const density = feature?.properties.density || 0;
+                        return {
+                            color: 'white',
+                            weight: 1,
+                            fillColor: getColor(density),
+                            fillOpacity: 0.6 + (density * 0.3)
+                        };
+                    },
+                    onEachFeature: (feature, layer) => {
+                        layer.bindPopup(`${feature.properties.count} submissions`);
+                    }
+                }).addTo(map);
+            }
+        };
+
+        // Initial draw
+        updateLayer();
 
         return () => {
+            map.off('zoomend', handleZoom);
             if (layerRef.current) {
-                layerRef.current.remove();
+                map.removeLayer(layerRef.current);
                 layerRef.current = null;
             }
         };
