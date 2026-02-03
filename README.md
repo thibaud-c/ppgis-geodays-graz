@@ -51,4 +51,4 @@ bun run dev
 - **Backend**: Automatically deployed via Vercel GitHub integration.
 
 ---
-Built with pride for GeoDays.
+Built for Uni Graz GeoDays.
