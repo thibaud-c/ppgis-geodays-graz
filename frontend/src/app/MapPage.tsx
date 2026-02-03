@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 export function MapPage() {
     const [searchParams] = useSearchParams();
 
-    // Parse version from URL (e.g. ?version=1)
+    // Parse version from URL (e.g.: ?version=1)
     const version = useMemo(() => {
         const v = searchParams.get('version');
         const num = parseInt(v || '', 10);

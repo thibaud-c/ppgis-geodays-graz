@@ -43,7 +43,7 @@ export function useH3Layer(
 
                 const counts: Record<string, number> = {};
 
-                // Index points
+                // Index points 
                 points.forEach(p => {
                     const h3Index = latLngToCell(p.lat, p.lng, resolution);
                     counts[h3Index] = (counts[h3Index] || 0) + 1;
