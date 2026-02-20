@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { useTheme } from '@/components/theme-provider';
 import { useHeatmap } from '@/hooks/use-heatmap';
 import { useH3Layer } from '@/hooks/use-h3-layer';
+import { useGeolocation } from '@/hooks/use-geolocation';
 
 // Fix for default marker icons in Leaflet with bundlers
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -45,7 +46,9 @@ export function MapView({ onMapClick, onMarkerClick, markers = [], tempMarker, v
     const mapInstance = useRef<L.Map | null>(null);
     const tileLayerRef = useRef<L.TileLayer | null>(null);
     const tempMarkerRef = useRef<L.CircleMarker | null>(null);
+    const geolocated = useRef(false);
     const { theme } = useTheme();
+    const { center, resolved } = useGeolocation();
 
     const points = markers.map(m => ({ lat: m.latitude, lng: m.longitude }));
 
@@ -82,8 +85,7 @@ export function MapView({ onMapClick, onMarkerClick, markers = [], tempMarker, v
         if (!mapContainer.current) return;
         if (mapInstance.current) return; // Initialize only once
 
-        // Initialize map centered on Graz
-        // Disable default zoom control to use custom ones
+        // Initialize map at default center (Graz)
         const map = L.map(mapContainer.current, {
             zoomControl: false,
         }).setView([47.0707, 15.4395], 13);
@@ -107,6 +109,13 @@ export function MapView({ onMapClick, onMarkerClick, markers = [], tempMarker, v
             tileLayerRef.current = null;
         };
     }, []); // Dependencies: empty array (init once)
+
+    // Fly to user's location once resolved
+    useEffect(() => {
+        if (!mapInstance.current || !resolved || geolocated.current) return;
+        geolocated.current = true;
+        mapInstance.current.flyTo(center, 13, { duration: 1.5 });
+    }, [resolved, center]);
 
     // Handle Theme Change (Switch Basemap)
     useEffect(() => {
