@@ -85,7 +85,7 @@ export function useSubmitMarker(options: UseSubmitMarkerOptions = {}) {
                 longitude: tempMarker.lng,
                 sentiment,
                 comment: responseText,
-                version
+                version: version ?? 999
             });
 
             toast.success(editingMarkerId ? "Marker updated!" : "Marker saved!");
