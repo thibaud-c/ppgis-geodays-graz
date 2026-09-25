@@ -57,9 +57,9 @@ export function MapView({ onMapClick, onMarkerClick, markers = [], tempMarker, v
     useH3Layer(mapInstance.current, points, viewMode === 'h3');
 
     // CartoDB Basemap URLs (High Contrast)
-    const CARTO_LIGHT = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
-    const CARTO_DARK = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-    const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    const CARTO_LIGHT = 'http://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    const CARTO_DARK = 'http://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+    const ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://www.esri.com">ESRI</a>';
 
     useEffect(() => {
         if (!mapInstance.current) return;
